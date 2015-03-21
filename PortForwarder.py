@@ -26,6 +26,7 @@ import socket
 import threading
 import thread
 import time
+import argparse
 import datetime
 import sys
 
@@ -34,6 +35,38 @@ sourcePort = []
 destinationIP = []
 destinationPort = []
 ConnectionList = []
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+--  FUNCTION
+--  Name:       initializeParameters
+--  Parameters:
+--      None
+--  Return Values:
+--      numberOfAttempts
+--          The total number of failed password attempts before blocking the IP
+--      timeScan
+--          The amount of time to use for slow scan password attempts
+--      banTime
+--          The time that will be passed after being blocked before the user is unblocked.
+--  Description:
+--      Function to initialize all the parameters and user specified variables through arguments
+--      passed when the python script is executed through the terminal.
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
+def initializeParameters():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--ip', nargs=1, help='The IP PortForwarder is running on.', required=True, dest='host')
+    
+    
+    args = parser.parse_args()
+    hostip = str(args.host[0])
+
+
+    return hostip
+
+
+
 
 def addressDelimeter(line):
     forwarderList = line.split(",")
@@ -58,7 +91,7 @@ def readConfig():
     filename = "config.txt"
     file = open(filename, "r")
     for line in file:
-
+	print line
         sIP, sPort, dIP, dPort = addressDelimeter(line)
         sourceIP.append(sIP)
         sourcePort.append(sPort)
@@ -110,7 +143,6 @@ def FindWhereToSend(clientIP, port):
 def receiveHandler(sendsocket, clientsocket, port):
 
         returnData = sendsocket.recv(bufferSize)
-        print "Received: " + (str(returnData))
         clientsocket.send(returnData)
 
 
@@ -124,9 +156,8 @@ def clientHandler(clientsocket, clientaddr, port):
     sendsocket.connect(addr2)
 
     while 1:
-        print "HERE"
+        
         data = clientsocket.recv(bufferSize)
-        print "Got it"
         sendsocket.send(data)
 
         ReceiveThread = threading.Thread(target = receiveHandler, args=(sendsocket, clientsocket, port))
@@ -166,14 +197,15 @@ def threadHandler(port, hostIP):
 
 if __name__ == '__main__':
     readConfig()
+    Hostip = initializeParameters()
 
-
-    Hostip = '192.168.0.24'
+    
 
     bufferSize = 1024
 
 
 
     for item in ConnectionList:
+	
         serverThread = threading.Thread(target = threadHandler, args=(int(item.sourcePort),Hostip))
         serverThread.start()

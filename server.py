@@ -26,8 +26,34 @@ import socket
 import threading
 import thread
 import time
+import argparse
 import datetime
 import sys
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+--  FUNCTION
+--  Name:       initializeParameters
+--  Parameters:
+--      None
+--  Return Values:
+--      numberOfAttempts
+--          The total number of failed password attempts before blocking the IP
+--      timeScan
+--          The amount of time to use for slow scan password attempts
+--      banTime
+--          The time that will be passed after being blocked before the user is unblocked.
+--  Description:
+--      Function to initialize all the parameters and user specified variables through arguments
+--      passed when the python script is executed through the terminal.
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
+def initializeParameters():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--ip', nargs=1, help='The IP Server is running on.', required=True, dest='host')
+   
+    args = parser.parse_args()
+    host = str(args.host[0])
+    return host
 
 
 def threadHandler(port, ip):
@@ -51,17 +77,15 @@ def threadHandler(port, ip):
 
 
 if __name__ == '__main__':
-    ip = '192.168.0.22'
-
+    ip = initializeParameters()
     AllConnections = [] #Full of connections
     bufferSize = 1024
 
-    #Read Config
+
     #For each unique port,
-    # AllConnections.append(8005)
+    AllConnections.append(8005)
     AllConnections.append(8006)
-    #Read Config
-    #For each unique port:
+    
     print ("Server is listening for connections\n")
 
 
