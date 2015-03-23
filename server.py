@@ -1,25 +1,16 @@
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
---  SOURCE FILE:    MultiThreadedServer.py - A simple echo server using multiple threads to handle client connections
+--  SOURCE FILE:    server.py - A simple echo server using multiple threads to handle client connections
 --
---  PROGRAM:        Multi threaded method server
---                  python MultiThreadedServer.py
+--  PROGRAM:        Multi threaded echo server
+--                  python server.py
 --
---  FUNCTIONS:      run(hostIP, port), close()
---
---  DATE:           February 10, 2015
---
---  REVISIONS:      February 18, 2015
---
---  DESIGNERS:      Kyle Gilles
---
---  PROGRAMMERS:    Kyle Gilles, Justin Tom
+--  FUNCTIONS:      initializeParameters(), threadHandler(port, ip)
 --
 --  NOTES:
 --  The program will accept TCP connections from client machines.
 --  The program will read data from the client socket and simply echo it back.
 --  Design is a simple, multi-threaded server I/O to handle simultaneous inbound connections.
---  The program will also keep a log file of the number of connections and all data being echoed.
---  Test with accompanying client application: echoClient.py
+--  Test with accompanying server applications: config.txt, PortForwarder.py, client.py
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #!/usr/bin/env python
 import socket
@@ -36,12 +27,8 @@ import sys
 --  Parameters:
 --      None
 --  Return Values:
---      numberOfAttempts
---          The total number of failed password attempts before blocking the IP
---      timeScan
---          The amount of time to use for slow scan password attempts
---      banTime
---          The time that will be passed after being blocked before the user is unblocked.
+--      host
+--          The IP of the current host the server is running on.
 --  Description:
 --      Function to initialize all the parameters and user specified variables through arguments
 --      passed when the python script is executed through the terminal.
@@ -55,10 +42,21 @@ def initializeParameters():
     host = str(args.host[0])
     return host
 
-
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+--  FUNCTION
+--  Name:       threadHandler
+--  Parameters:
+--      port
+--          Port(s) to listen on for any connections
+--      ip
+--          IP address of the client/port forwarder that will be connecting to the server.
+--  Return Values:
+--      host
+--          The IP of the current host the server is running on.
+--  Description:
+--      Function to infinitely receive and send back data to the connected portforwarder/client.
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
 def threadHandler(port, ip):
-
-
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     addr = (ip, port)

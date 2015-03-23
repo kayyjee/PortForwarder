@@ -1,27 +1,18 @@
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
---  SOURCE FILE:    echoClient.py - A simple TCP client program.
+--  SOURCE FILE:    client.py - A simple TCP client program.
 --
 --  PROGRAM:        Multi threaded client
---                  python echoClient.py
+--                  python client.py
 --
---  FUNCTIONS:      run()
---
---  DATE:           February 10, 2015
---
---  REVISIONS:      February 18, 2015
---
---  DESIGNERS:      Kyle Gilles, Justin Tom
---
---  PROGRAMMERS:    Kyle Gilles, Justin Tom
+--  FUNCTIONS:      run(), initializeParameters()
 --
 --  NOTES:
---  The program will accept TCP connections from a user specified server and port.
---  The server will be specified by the IP address.
---  The user will be prompted for the data to send, how many clients to simulate
---  and how many number of ports each client will send that data.
---  The application will also keep a log file of the data sent and received as well as
---  round trip ports for each sent data and the average RTT of all the data sent
---  Test with accompanying server applications: multithreadServer.py, epollSelectServer.py and epollEdgeLevelServer.py
+--  The program will create a TCP connection from the specified server and port.
+--  The port forwarder IP address, port and number of connections will be specified at command execution.
+--  The buffer size and data being sent are hardcoded into the code.
+--  The program will then receive back the echo'd data from the server and print out the data
+--  to ensure the data was kept intact on it's round trip.
+--  Test with accompanying server applications: config.txt, PortForwarder.py, server.py
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #!/usr/bin/env python
 
@@ -42,12 +33,12 @@ import time
 --  Parameters:
 --      None
 --  Return Values:
---      numberOfAttempts
---          The total number of failed password attempts before clientsing the IP
---      portScan
---          The amount of port to use for slow scan password attempts
---      banport
---          The port that will be passed after being clientsed before the user is unclientsed.
+--      host
+--          The IP address of the port forwarder
+--      port
+--          The port the client will use to connect with
+--      clients
+--          How many clients to simulate connecting to the port forwarder with.
 --  Description:
 --      Function to initialize all the parameters and user specified variables through arguments
 --      passed when the python script is executed through the terminal.
@@ -71,7 +62,17 @@ def initializeParameters():
 
 
 
-
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+--  FUNCTION
+--  Name:       run
+--  Parameters:
+--      clientNumber
+--  Return Values:
+--      none
+--  Description:
+--      Function to infinitely send and receive data to the specified portforwarder.
+--      It will also print the data it has received as well as from which host.
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
 def run (clientNumber):
      s = socket(AF_INET, SOCK_STREAM)
      addr = (host,port)
