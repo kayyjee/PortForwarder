@@ -32,7 +32,6 @@ import argparse
 import datetime
 import sys
 
-sourceIP = []
 sourcePort = []
 destinationIP = []
 destinationPort = []
@@ -67,8 +66,6 @@ def initializeParameters():
 --      line
 --          individual line read from config file.
 --  Return Values:
---      source_IP
---          source IP (of packet to be forwarded)
 --      source_Port
 --          source port (of packet to be forwarded)
 --      destination_IP
@@ -81,17 +78,14 @@ def initializeParameters():
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
 def addressDelimeter(line):
     forwarderList = line.split(",")
-    source = forwarderList[0]
+    source_Port = forwarderList[0]
     destination = forwarderList[1]
-    sourceTemp = source.split(":")
-    source_IP = sourceTemp[0]
-    source_Port = sourceTemp[1]
     destinationTemp = destination.split(":")
     destination_IP = destinationTemp[0]
     destination_Port = destinationTemp[1]
     #Since this is the last delimited value from the line, it will contain a newline character, thus we will need to remove it evey time
     destination_Port = destination_Port.strip(' \t\n\r')
-    return source_IP, source_Port, destination_IP, destination_Port
+    return source_Port, destination_IP, destination_Port
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 --  FUNCTION
@@ -105,7 +99,6 @@ def addressDelimeter(line):
 --      the data in each line. 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
 def readConfig():
-    global sourceIP
     global sourcePort
     global destinationIP
     global destinationPort
@@ -113,14 +106,13 @@ def readConfig():
     filename = "config.txt"
     file = open(filename, "r")
     for line in file:
-	print line
-        sIP, sPort, dIP, dPort = addressDelimeter(line)
-        sourceIP.append(sIP)
+    print line
+        sPort, dIP, dPort = addressDelimeter(line)
         sourcePort.append(sPort)
         destinationIP.append(dIP)
         destinationPort.append(dPort)
 
-        Connection = mk_Connection(sIP, sPort, dIP, dPort)
+        Connection = mk_Connection(sPort, dIP, dPort)
         ConnectionList.append(Connection)
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -135,13 +127,11 @@ def readConfig():
 --      so that each received packet corresponds with a destination.
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Connection(object):
-    sourceIp = ""
     sourcePort = ""
     destinationIp = ""
     destinationPort = ""
 
-    def __init__(self, sourceIP, sourcePort, destinationIP, destinationPort):
-        self.sourceIP = sourceIP
+    def __init__(self, sourcePort, destinationIP, destinationPort):
         self.sourcePort = sourcePort
         self.destinationIP = destinationIP
         self.destinationPort = destinationPort
@@ -163,87 +153,34 @@ class Connection(object):
 --  Description:
 --      Passes variables to the Connection object constructor.
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
-def mk_Connection(sourceIP, sourcePort, destinationIP, destinationPort):
-    connection = Connection(sourceIP, sourcePort, destinationIP, destinationPort)
+def mk_Connection(sourcePort, destinationIP, destinationPort):
+    connection = Connection(sourcePort, destinationIP, destinationPort)
     return connection
 
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 --  FUNCTION
---  Name:       FindWhereToSend
+--  Name:       dataHandler
 --  Parameters:
---      clientIP
---          IP packet was received from 
---      port
---          port packet was received from
---  Return Values:
---      connection.destinationIP
---          IP where packet is to be forwarded
---      connectin.destinationPort
---          The port to forward the packet to
---  Description:
---      This function acts as a getter method, returning the connection
---      object variables.
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
-def FindWhereToSend(clientIP, port):
-
-    for connection in ConnectionList:
-        if connection.sourceIP == clientIP:
-
-            if connection.sourcePort == str(port):
-
-                return connection.destinationIP, connection.destinationPort
-
-
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
---  FUNCTION
---  Name:       receiveHandler
---  Parameters:
---      sendSocket
---          Socket connecting port forwarder and server
---      clientSocket
---          Socket connecting port forwarder and client
+--      source
+--          source of incoming packets
+--      destination
+--          destination address of incoming packets
 --  Return Values:
 --      None
 --  Description:
---      Thread function listening for data from the server, upon receiving data 
---      will send it across the client socket.
+--      Thread function that sits at receive, upon receiving a packet will 
+--      forward it to the destination.
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
-def receiveHandler(sendsocket, clientsocket):
-
-    returnData = sendsocket.recv(bufferSize)
-    clientsocket.send(returnData)
-
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
---  FUNCTION
---  Name:       clientHandler
---  Parameters:
---      clientSocket
---          Socket connecting port forwarder and client
---      port
---          port where packet was received
---  Return Values:
---      None
---  Description:
---      Thread function that finds where to forward the packet too (from config file)
---      connects to that address, sends the data then starts a thread that 
---      waits for return data. 
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''  
-def clientHandler(clientsocket, port):
-    global bufferSize
-    sendsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientIP, ClientSocket = clientsocket.getpeername()
-    destinationIP, destinationPort = FindWhereToSend(clientIP, port)
-    addr2 = (destinationIP, int(destinationPort))
-
-    sendsocket.connect(addr2)
-
-    while 1:
-        data = clientsocket.recv(bufferSize)
-        sendsocket.send(data)
-
-        ReceiveThread = threading.Thread(target = receiveHandler, args=(sendsocket, clientsocket))
-        ReceiveThread.start()
+def dataHandler(source, destination):
+   while 1:
+        data = source.recv(bufferSize)
+        if data ==' ':
+            source.shutdown(socket.SHUT_RD)
+            destination.shutdown(socket.SHUT_WR)    
+        destination.sendall(data)
+    
+    
 
 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -259,20 +196,26 @@ def clientHandler(clientsocket, port):
 --  Description:
 --      Thread function that binds to ports determined in the config
 --      file, then listens for a connection at those ports. Upon receiving a
---      connection, will create a socket and start a thread to receive data. 
+--      connection, will create start 2 threads, one to handle packets coming 
+--      from the client and one coming from the server.  
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' 
-def threadHandler(port, hostIP):
+def threadHandler(connection, hostIP):
 
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    addr = (hostIP, port)
+    addr = (hostIP, int(connection.sourcePort))
     serversocket.bind(addr)
     serversocket.listen(50)
 
-    while 1:
+     while 1:
         clientsocket, clientaddr = serversocket.accept()
-        clientThread = threading.Thread(target = clientHandler, args=(clientsocket, port))
+        sendsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sendAddr = (Connection.destinationIP, int(Connection.destinationPort))
+        sendsocket.connect(sendAddr)
+        clientThread = threading.Thread(target = sendData, args=(sendsocket, clientsocket))
+        receiveThread = threading.Thread(target = sendData, args=(clientsocket, sendsocket))
         clientThread.start()
+        receiveThread.start()
 
 
 
@@ -282,6 +225,7 @@ if __name__ == '__main__':
     Hostip = initializeParameters()
     bufferSize = 1024
 
-    for item in ConnectionList:
-	    serverThread = threading.Thread(target = threadHandler, args=(int(item.sourcePort),Hostip))
+    for connection in ConnectionList:
+        serverThread = threading.Thread(target = threadHandler, args=(connection,Hostip))
         serverThread.start()
+
